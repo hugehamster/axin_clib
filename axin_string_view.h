@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
     const char* data;
@@ -32,6 +33,15 @@ static inline axin_string_view_t axin_strv_from_range(
 ) {
     if (end < begin) return AXIN_STRV_EMPTY;
     return (axin_string_view_t){ begin, end - begin };
+}
+
+static inline void axin_strv_print(
+    axin_string_view_t sv
+) {
+    for (size_t i = 0; i < sv.size; i++) {
+        putc(sv.data[i], stdout);
+    }
+    fflush(stdout);
 }
 
 static inline bool axin_strv_empty(
