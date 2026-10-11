@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 typedef struct {
     const char* data;
@@ -15,21 +16,34 @@ static inline axin_string_view_t axin_strv_from_parts(
     const char* data,
     size_t size
 ) {
-    return (axin_string_view_t){data, size};
+    return (axin_string_view_t){ data, size };
 }
 
 static inline axin_string_view_t axin_strv_from_cstr(
     const char* cstr
 ) {
-    size_t size = 0;
-    for (int i = 0; cstr[i] != '\0'; i++) size++;
-    return (axin_string_view_t){cstr, size};
+    size_t size = strlen(cstr);
+    return (axin_string_view_t){ cstr, size };
+}
+
+static inline axin_string_view_t axin_strv_from_range(
+    const char* begin,
+    const char* end
+) {
+    if (end < begin) return AXIN_STRV_EMPTY;
+    return (axin_string_view_t){ begin, end - begin };
 }
 
 static inline bool axin_strv_empty(
     axin_string_view_t sv
 ) {
-    return sv.data == NULL && sv.size == 0;
+    return sv.size == 0;
+}
+
+static inline size_t axin_strv_size(
+    axin_string_view_t sv
+) {
+    return sv.size;
 }
 
 static inline const char* axin_strv_at(
@@ -38,6 +52,37 @@ static inline const char* axin_strv_at(
 ) {
     if (index >= sv.size) return NULL;
     return sv.data + index;
+}
+
+static inline const char* axin_strv_at_unsafe(
+    axin_string_view_t sv,
+    size_t index
+) {
+    return sv.data + index;
+}
+
+static inline bool axin_strv_try_at(
+    axin_string_view_t sv,
+    size_t index,
+    char* out
+) {
+    if (index >= sv.size) return false;
+    *out = *axin_strv_at(sv, index);
+    return true;
+}
+
+static inline char axin_strv_front(
+    axin_string_view_t sv
+) {
+    if (axin_strv_empty(sv)) return 0;
+    return *axin_strv_at(sv, 0);
+}
+
+static inline char axin_strv_back(
+    axin_string_view_t sv
+) {
+    if (axin_strv_empty(sv)) return 0;
+    return *axin_strv_at(sv, sv.size - 1);
 }
 
 static inline axin_string_view_t axin_strv_substr(
@@ -73,7 +118,7 @@ static inline bool axin_strv_equal(
     axin_string_view_t b
 ) {
     if (a.size != b.size) return false;
-    for (int i = 0; i < a.size; i++) {
+    for (size_t i = 0; i < a.size; i++) {
         if (a.data[i] != b.data[i]) return false;
     }
     return true;
