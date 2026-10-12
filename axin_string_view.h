@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -132,6 +133,70 @@ static inline bool axin_strv_equal(
         if (a.data[i] != b.data[i]) return false;
     }
     return true;
+}
+
+static inline int axin_strv_compare(
+    axin_string_view_t a,
+    axin_string_view_t b
+) {
+    size_t min = a.size < b.size ? a.size : b.size;
+    for (size_t i = 0; i < min; i++) {
+        if ((unsigned char)a.data[i] > (unsigned char)b.data[i]) return 1;
+        if ((unsigned char)a.data[i] < (unsigned char)b.data[i]) return -1;
+    }
+    if (a.size == b.size) return 0;
+    if (min == a.size) return -1;
+    return 1;
+}
+
+static inline bool axin_strv_starts_with(
+    axin_string_view_t sv,
+    axin_string_view_t prefix
+) {
+    if (prefix.size > sv.size) return false;
+    for (size_t i = 0; i < prefix.size; i++) {
+        if (sv.data[i] != prefix.data[i]) return false;
+    }
+    return true;
+}
+
+static inline bool axin_strv_ends_with(
+    axin_string_view_t sv,
+    axin_string_view_t suffix
+) {
+    if (suffix.size > sv.size) return false;
+    for (size_t i = 0; i < suffix.size; i++) {
+        if (sv.data[i + sv.size - suffix.size] != suffix.data[i]) return false;
+    }
+    return true;
+}
+
+static inline size_t axin_strv_find(
+    axin_string_view_t sv,
+    axin_string_view_t needle,
+    size_t pos
+) {
+    if (pos > sv.size) return SIZE_MAX;
+    if (axin_strv_empty(needle)) return pos;
+    if (needle.size > sv.size - pos) return SIZE_MAX;
+    for (size_t i = pos; i <= sv.size - needle.size; i++) {
+        axin_string_view_t sub = axin_strv_substr(sv, i, needle.size);
+        if (axin_strv_equal(sub, needle)) return i;
+    }
+    return SIZE_MAX;
+}
+
+static inline size_t axin_strv_find_char(
+    axin_string_view_t sv,
+    char ch,
+    size_t pos
+) {
+    if (axin_strv_empty(sv)) return SIZE_MAX;
+    if (pos > sv.size) return SIZE_MAX;
+    for (size_t i = pos; i < sv.size; i++) {
+        if (sv.data[i] == ch) return i;
+    }
+    return SIZE_MAX;
 }
 
 #endif // AXIN_CLIB_STRING_VIEW_H
