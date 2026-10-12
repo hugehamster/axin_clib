@@ -24,26 +24,21 @@ typedef struct {
 
 #define AXIN_TEST_CASE(func) (axin_test_case_t){ #func, func }
 
-static inline bool axin_test_expect_impl(
-    axin_test_context_t* ctx,
-    bool passed,
-    const char* expr,
-    const char* file,
-    int line
-) {
-    if (!passed) {
-        ctx->failed_count++;
-        printf(AXIN_TEST_COLOR_RED "    [%s:%d]: assertion failed\n"
-            AXIN_TEST_COLOR_RESET "        %s\n",
-            file, line, expr);
-    }
-    return passed;
-}
 #define axin_test_expect(ctx, expr) \
     axin_test_expect_impl(ctx, (expr), #expr, __FILE__, __LINE__)
 
+#define axin_test_expect_size_eq(ctx, actual, expected) \
+    axin_test_expect_size_eq_impl(ctx, (actual), (expected), \
+        #actual" == "#expected, __FILE__, __LINE__)
+
 #define axin_test_require(ctx, expr) do { \
     if (!axin_test_expect((ctx), (expr))) { \
+        return; \
+    } \
+} while(0)
+
+#define axin_test_require_size_eq(ctx, actual, expected) do { \
+    if (!axin_test_expect_size_eq((ctx), (actual), (expected))) { \
         return; \
     } \
 } while(0)
@@ -81,6 +76,43 @@ static inline int axin_test_run(
     printf("failed: %zu" AXIN_TEST_COLOR_RESET "\n", fail_num);
     if (fail_num != 0) return 1;
     return 0;
+}
+
+static inline bool axin_test_expect_impl(
+    axin_test_context_t* ctx,
+    bool passed,
+    const char* expr,
+    const char* file,
+    int line
+) {
+    if (!passed) {
+        ctx->failed_count++;
+        printf(AXIN_TEST_COLOR_RED "    [%s:%d]: assertion failed\n"
+            AXIN_TEST_COLOR_RESET "        %s\n",
+            file, line, expr);
+    }
+    return passed;
+}
+
+static inline bool axin_test_expect_size_eq_impl(
+    axin_test_context_t* ctx,
+    size_t actual,
+    size_t expected,
+    const char* expr,
+    const char* file,
+    int line
+) {
+    if (actual != expected) {
+        ctx->failed_count++;
+        printf(AXIN_TEST_COLOR_RED
+            "    [%s:%d]: assertion failed\n"
+            AXIN_TEST_COLOR_RESET
+            "        %s\n"
+            "            actual:   %zu\n"
+            "            expected: %zu\n",
+            file, line, expr, actual, expected);
+    }
+    return actual == expected;
 }
 
 #endif // AXIN_CLIB_TEST_H
